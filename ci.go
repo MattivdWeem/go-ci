@@ -39,11 +39,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
         if conf.Script != "" {
           if !runScript("./"+tmpDir+conf.Script){
+            fmt.Println("Script failed")
             os.Exit(1)
           }
         }
 
-        removeFile("./"+tmpDir+".git");
+        // remove dev assets
+        removeDir(tmpDir+".git");
+        removeFile(tmpDir+buildFile);
+
+        // rsync everything
         fmt.Println(" >> Deploying your project to "+ destination)
         if rSync(tmpDir, destination) {
           fmt.Println(" >> Deployment succeeded")
