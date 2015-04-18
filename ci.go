@@ -15,6 +15,7 @@ var buildFile string = "build.json"
 
 type settings struct {
     Target string
+    Script string
 }
 
 
@@ -28,27 +29,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
   if gitClone("http://github.com/mattivdweem/learning-go",tmpDir) {
 
     fmt.Println(" >> Looking for a build file")
-    if _, err := os.Stat("./"+tmpDir+buildFile); err == nil {
+    build := "./"+tmpDir+buildFile
+
+    if _, err := os.Stat(build); err == nil {
         fmt.Println(" >> processing build file")
 
-        jsonData, err := ioutil.ReadFile("./"+tmpDir+buildFile)
-        fmt.Println(jsonData)
-        if err != nil { }
-
-        var conf settings
-        err=json.Unmarshal(jsonData, &conf)
-        if err!=nil{
-            fmt.Print("Error:",err)
-        }
-
+        conf := readSettings(build)
         var destination string = conf.Target
 
-        // check if there are scripts to run yes? run them
+        if conf.Script != "" {
+          if !runScript("./"+tmpDir+conf.Script){
+            os.Exit(1)
+          }
+        }
 
-
-
-        // no scripts/  if succeeded continue : 
-
+        removeFile("./"+tmpDir+".git");
         fmt.Println(" >> Deploying your project to "+ destination)
         if rSync(tmpDir, destination) {
           fmt.Println(" >> Deployment succeeded")
@@ -63,6 +58,35 @@ func handler(w http.ResponseWriter, r *http.Request) {
   removeDir(tmpDir);
 }
 
+/*
+  Run the script you've given.
+*/
+func runScript(script string) bool{
+  fmt.Println(" >> Scripts started")
+  if _, err := os.Stat(script); err == nil {
+    _,err := exec.Command("./"+script).Output()
+    if err != nil {
+      return false
+    }
+    fmt.Println(" >> Scripts succeeded")
+    return true
+  }
+  return false
+}
+
+
+// read your build file
+func readSettings(file string) settings{
+  jsonData, err := ioutil.ReadFile(file)
+  if err != nil { }
+
+  var conf settings
+  err=json.Unmarshal(jsonData, &conf)
+  if err!=nil{
+      fmt.Print("Error:",err)
+  }
+  return conf
+}
 
 /*
  Clone a git repository in the given directory
@@ -84,6 +108,18 @@ func gitClone(repository string, dir string) bool{
 */
 func removeDir(dir string){
   outputRm, errorsRm := exec.Command("rm","-r",dir).Output()
+  if errorsRm != nil {
+    fmt.Printf("%s", errorsRm)
+  }
+  fmt.Printf("%s", outputRm)
+}
+
+
+/*
+  Remove a directory recursively
+*/
+func removeFile(file string){
+  outputRm, errorsRm := exec.Command("rm",file).Output()
   if errorsRm != nil {
     fmt.Printf("%s", errorsRm)
   }
