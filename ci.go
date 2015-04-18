@@ -3,12 +3,21 @@ package main
 import (
     "fmt"
     "net/http"
+    "io/ioutil"
+    "os"
      "os/exec"
      "math/rand"
+     "encoding/json"
   )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-var destination string = "/Users/mattivandeweem/Development/go/live/"
+var buildFile string = "build.json"
+
+type settings struct {
+    Target string
+}
+
+
 
 /*
   handle all requests
@@ -17,10 +26,37 @@ func handler(w http.ResponseWriter, r *http.Request) {
   tmpDir := randSeq(16) + "/"
   fmt.Println(" >> Cloning your repository")
   if gitClone("http://github.com/mattivdweem/learning-go",tmpDir) {
-    fmt.Println(" >> Deploying your project to "+ destination)
-    if rSync(tmpDir, destination) {
-      fmt.Println(" >> Deployment succeeded")
+
+    fmt.Println(" >> Looking for a build file")
+    if _, err := os.Stat("./"+tmpDir+buildFile); err == nil {
+        fmt.Println(" >> processing build file")
+
+        jsonData, err := ioutil.ReadFile("./"+tmpDir+buildFile)
+        fmt.Println(jsonData)
+        if err != nil { }
+
+        var conf settings
+        err=json.Unmarshal(jsonData, &conf)
+        if err!=nil{
+            fmt.Print("Error:",err)
+        }
+
+        var destination string = conf.Target
+
+        // check if there are scripts to run yes? run them
+
+
+
+        // no scripts/  if succeeded continue : 
+
+        fmt.Println(" >> Deploying your project to "+ destination)
+        if rSync(tmpDir, destination) {
+          fmt.Println(" >> Deployment succeeded")
+        }
+    } else {
+      fmt.Println(" >> No build file found..")
     }
+
   }
 
   // Remove the dir anyway
