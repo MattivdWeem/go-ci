@@ -10,6 +10,9 @@ import (
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 var destination string = "/Users/mattivandeweem/Development/go/live/"
 
+/*
+  handle all requests
+*/
 func handler(w http.ResponseWriter, r *http.Request) {
   tmpDir := randSeq(16) + "/"
   fmt.Println(" >> Cloning your repository")
@@ -20,13 +23,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
     }
   }
 
-
   // Remove the dir anyway
   removeDir(tmpDir);
-
-
 }
 
+
+/*
+ Clone a git repository in the given directory
+*/
 func gitClone(repository string, dir string) bool{
   out,err := exec.Command("git","clone",repository,dir).Output()
   if err != nil {
@@ -38,6 +42,10 @@ func gitClone(repository string, dir string) bool{
   return true
 }
 
+
+/*
+  Remove a directory recursively
+*/
 func removeDir(dir string){
   outputRm, errorsRm := exec.Command("rm","-r",dir).Output()
   if errorsRm != nil {
@@ -46,6 +54,10 @@ func removeDir(dir string){
   fmt.Printf("%s", outputRm)
 }
 
+
+/*
+  Rsync a folder / it's contents into another folder
+*/
 func rSync(dir string, output string) bool{
   outputRsync, errorsRsync := exec.Command("rsync","-q","-av",dir,output).Output()
   if errorsRsync != nil {
@@ -57,11 +69,19 @@ func rSync(dir string, output string) bool{
   return true
 }
 
+
+/*
+  When starting the script, run a little webserver on port 3768
+*/
 func main() {
   http.HandleFunc("/", handler)
   http.ListenAndServe(":3768", nil)
 }
 
+
+/*
+  Create a randomized string
+*/
 func randSeq(n int) string {
   b := make([]rune, n)
   for i := range b {
